@@ -45,8 +45,21 @@ class Catalog(object):
         #Make the dataframe an attribute and that's it
         self.dataframe = df
 
-        #Make a dictionary of the correlated variables, which has nothing for now
+        #Make a dictionary of the correlated variables
         self.correlated_variables = {}
+
+    def property(self, name):
+        """Get the values of a property in the dataframe.
+
+        Args:
+            name (string): column name
+
+        Return:
+            column: numpy array of the values in the halo catalog
+        """
+        if name not in self.dataframe.columns:
+            raise Exception("Invalid property.")
+        return self.dataframe[name].values
 
     def compute_correlations(self, R_or_M, kind="mean"):
         """Compute the correlations between either X_R or X_M
@@ -84,6 +97,12 @@ class Catalog(object):
         order = np.argsort(np.fabs(ordered_corrs))
         self.ordered_corrs = ordered_corrs[order[::-1]]
         self.ordered_names = ordered_names[order[::-1]]
+
+        #Save the correlations
+        self.correlated_variables['%s_%s'%(R_or_M, kind)] = \
+            [self.ordered_names, self.ordered_corrs]
+
+        #Return the result
         return self.ordered_names, self.ordered_corrs
     
 
@@ -92,5 +111,5 @@ if __name__ == "__main__":
     print(cat.dataframe.columns)
     names, corrs = cat.compute_correlations("R")
 
-    for R, name in zip(names, corrs):
+    for name, R in zip(names, corrs):
         print(name, R)
