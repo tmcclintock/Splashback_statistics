@@ -84,13 +84,13 @@ class Catalog(object):
         order = np.argsort(np.fabs(ordered_corrs))
         self.ordered_corrs = ordered_corrs[order[::-1]]
         self.ordered_names = ordered_names[order[::-1]]
-        return
+        return self.ordered_names, self.ordered_corrs
     
 
 if __name__ == "__main__":
     cat = Catalog(2000, 1.)
     print(cat.dataframe.columns)
-    cat.compute_correlations("R")
+    names, corrs = cat.compute_correlations("R")
 
-    for name, R in zip(cat.ordered_corrs, cat.ordered_names):
+    for R, name in zip(names, corrs):
         print(name, R)
