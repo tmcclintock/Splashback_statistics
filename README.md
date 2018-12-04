@@ -4,3 +4,5 @@ A set of basic tools to read in halo catalogs that have additional splashback re
 For now, the only thing implemented is the `Catalog` object, which reads in a halo catalog and stores it in a `pandas.dataFrame`. It adds columns of interest including concentrations, peak heights, and ratios (e.g. `Rsp_mean/R200b`).
 
 If you want to create Catalog objects of all the halo catalogs, you must have access to Benedikt Diemer's full halo catalog files, and they should be put in this directory.
+
+See `Example.ipynb` for an example of how to use the `Catalog` object.
