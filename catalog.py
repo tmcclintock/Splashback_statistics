@@ -45,6 +45,52 @@ class Catalog(object):
         #Make the dataframe an attribute and that's it
         self.dataframe = df
 
+        #Make a dictionary of the correlated variables, which has nothing for now
+        self.correlated_variables = {}
+
+    def compute_correlations(self, R_or_M, kind="mean"):
+        """Compute the correlations between either X_R or X_M
+        with everything else.
+
+        Stores the correlation attributes in a dictionary, and
+        also returns them.
+
+        Args:
+            R_or_M (string): either 'R' or 'M'
+            kind (string): the kind of splashback definition, e.g. "mean" or "percentile75"
+
+        Returns:
+            names: array of strings ordered by absolute correlation.
+            correlations: array of correlations
+
+        """
+        if R_or_M not in ["R", "M"]:
+            raise Exception("R_or_M must be either 'R' or 'M'.")
+        if kind not in ["mean", "percentile50",
+                        "percentile75", "percentile87"]:
+            raise Exception("kind must be 'mean', 'percentile50', 'percentile75', or 'percentile87'.")
+        
+        if "%s_%s"%(R_or_M, kind) in self.correlated_variables.keys():
+            #Correlations already computed
+            return
+
+        X = self.dataframe['X_%ssp_%s'%(R_or_M, kind)].values
+        ordered_names = np.array([])
+        ordered_corrs = np.array([])
+        for name in self.dataframe.columns:
+            v = self.dataframe[name].values
+            ordered_corrs = np.append(ordered_corrs, np.corrcoef(X, v)[0,1])
+            ordered_names = np.append(ordered_names, name)
+        order = np.argsort(np.fabs(ordered_corrs))
+        self.ordered_corrs = ordered_corrs[order[::-1]]
+        self.ordered_names = ordered_names[order[::-1]]
+        return
+    
+
 if __name__ == "__main__":
     cat = Catalog(2000, 1.)
     print(cat.dataframe.columns)
+    cat.compute_correlations("R")
+
+    for name, R in zip(cat.ordered_corrs, cat.ordered_names):
+        print(name, R)
