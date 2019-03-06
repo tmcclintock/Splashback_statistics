@@ -14,7 +14,7 @@ class Catalog(object):
         scale_factor (float): scale factor of the snapshot
         cosmo (string): cosmology of the sim. Default is bolshoi
     """
-    def __init__(self, length, scale_factor, cosmo="bolshoi"):
+    def __init__(self, length, scale_factor, cosmo="bolshoi", parents_only=True):
         names    = _default_header.split(" ")
         for i,name in enumerate(names):
             newname = name[:name.find('(')]
@@ -35,6 +35,7 @@ class Catalog(object):
             df["X_Rsp_%s"%kind] = df["Rsp_%s"%kind].values / df["R200b"]
             df["X_Msp_%s"%kind] = df["Msp_%s"%kind].values / df["M200b"]
             continue
+
         #Now the peak heights
         cosmology.setCosmology(cosmo)
         redshift = 1./scale_factor - 1
@@ -42,6 +43,20 @@ class Catalog(object):
                      "sp_percentile75", "sp_percentile87"]:
             df["nu%s"%kind] = peaks.peakHeight(df["M%s"%kind].values, redshift)
             continue
+
+        #If we want parent halos only, loop over everythin
+        #and cut out subhalos
+        #if parents_only:
+        #    pids = df["pid"].values
+            #inds = pids < 0
+        #    inds = pids > -1
+        #    df.drop(inds)
+            #for name in names:
+            #    print name
+            #    df[name] = df[name][inds]
+
+        #print(np.corrcoef(df["Spin"].values, df["X_Msp_mean"].values))
+        #exit()
         #Make the dataframe an attribute and that's it
         self.dataframe = df
 
@@ -87,16 +102,19 @@ class Catalog(object):
             #Correlations already computed
             return
 
+        pids = self.dataframe['upid_mean']
+        inds = pids < 0
+        
         X = self.dataframe['X_%ssp_%s'%(R_or_M, kind)].values
         ordered_names = np.array([])
         ordered_corrs = np.array([])
         for name in self.dataframe.columns:
             v = self.dataframe[name].values
-            ordered_corrs = np.append(ordered_corrs, np.corrcoef(X, v)[0,1])
+            ordered_corrs = np.append(ordered_corrs, np.corrcoef(X[inds], v[inds])[0,1])
             ordered_names = np.append(ordered_names, name)
         order = np.argsort(np.fabs(ordered_corrs))
-        self.ordered_corrs = ordered_corrs[order[::-1]]
-        self.ordered_names = ordered_names[order[::-1]]
+        self.ordered_corrs = ordered_corrs[order][::-1]
+        self.ordered_names = ordered_names[order][::-1]
 
         #Save the correlations
         self.correlated_variables['%s_%s'%(R_or_M, kind)] = \
@@ -108,8 +126,9 @@ class Catalog(object):
 
 if __name__ == "__main__":
     cat = Catalog(2000, 1.)
+    
     print(cat.dataframe.columns)
-    names, corrs = cat.compute_correlations("R")
+    names, corrs = cat.compute_correlations("M")
 
     for name, R in zip(names, corrs):
         print(name, R)
