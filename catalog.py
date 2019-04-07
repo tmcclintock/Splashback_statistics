@@ -2,9 +2,21 @@ import numpy as np
 import pandas as pd
 from colossus.cosmology import cosmology
 from colossus.lss import peaks
+from minepy import MINE
 
 #Header of the catalogs. don't touch this :)
 _default_header = "#scale(0) id(1) desc_scale(2) desc_id(3) num_prog(4) pid(5) upid(6) desc_pid(7) phantom(8) sam_M200b(9) M200b(10) R200b(11) rs(12) vrms(13) mmp?(14) scale_of_last_MM(15) vmax(16) x(17) y(18) z(19) vx(20) vy(21) vz(22) Jx(23) Jy(24) Jz(25) Spin(26) Breadth_first_ID(27) Depth_first_ID(28) Tree_root_ID(29) Orig_halo_ID(30) Snap_num(31) Next_coprogenitor_depthfirst_ID(32) Last_progenitor_depthfirst_ID(33) Last_mainleaf_depthfirst_ID(34) Tidal_Force(35) Tidal_ID(36) Rs_Klypin(37) M200b_all(38) Mvir(39) M200c(40) M500c(41) M2500c(42) Xoff(43) Voff(44) Spin_Bullock(45) b_to_a(46) c_to_a(47) A[x](48) A[y](49) A[z](50) b_to_a_500c(500c)(51) c_to_a_500c(500c)(52) A[x]_500c(500c)(53) A[y]_500c(500c)(54) A[z]_500c(500c)(55) T/|U|(56) M_pe_Behroozi(57) M_pe_Diemer(58) Halfmass_Radius(59) Macc(60) Mpeak(61) Vacc(62) Vpeak(63) Halfmass_Scale(64) Acc_Rate_Inst(65) Acc_Rate_100Myr(66) Acc_Rate_1*Tdyn(67) Acc_Rate_2*Tdyn(68) Acc_Rate_Mpeak(69) Mpeak_Scale(70) Acc_Scale(71) First_Acc_Scale(72) First_Acc_Mvir(73) First_Acc_Vmax(74) Vmax\@Mpeak(75) Tidal_Force_Tdyn(76) Log_[Vmax/Vmax_max[Tdyn;Tmpeak]](77) Time_to_future_merger(78) Future_merger_MMP_ID(79) Rsp_status(80) upid_mean(81) Rsp_mean(82) Rsp_mean_err(83) Msp_mean(84) Msp_mean_err(85) upid_percentile50(86) Rsp_percentile50(87) Rsp_percentile50_err(88) Msp_percentile50(89) Msp_percentile50_err(90) upid_percentile75(91) Rsp_percentile75(92) Rsp_percentile75_err(93) Msp_percentile75(94) Msp_percentile75_err(95) upid_percentile87(96) Rsp_percentile87(97) Rsp_percentile87_err(98) Msp_percentile87(99) Msp_percentile87_err(100)"
+
+skipped_names = ["scale","id","desc_scale","desc_id","num_prog","pid","upid",
+                 "phantom","sam_M200b","vx","vy","vz","mmp?","x","y","z","Jx",
+                 "Jy","Jz","Breadth_first_ID","Depth_first_ID",
+                 "Last_mainleaf_depthfirst_ID","Tidal_ID","Tree_root_ID",
+                 "Orig_halo_ID","Snap_num","Next_coprogenitor_depthfirst_ID",
+                 "Last_progenitor_depthfirst_ID","Last_mainleaf_depthfirst_ID",
+                 "M200b","R200b","M200b_all","Mvir","M200c","M500c","M2500c",
+                 "M_pe_Behroozi","M_pe_Diemer","Macc","Mpeak","First_Acc_Mvir",
+                 "First_Acc_Vmax","Vmax\@Mpeak","Rsp_status",
+                 "Future_merger_MMP_ID"]
 
 class Catalog(object):
     """Splashback halo catalog
@@ -44,24 +56,11 @@ class Catalog(object):
             df["nu%s"%kind] = peaks.peakHeight(df["M%s"%kind].values, redshift)
             continue
 
-        #If we want parent halos only, loop over everythin
-        #and cut out subhalos
-        #if parents_only:
-        #    pids = df["pid"].values
-            #inds = pids < 0
-        #    inds = pids > -1
-        #    df.drop(inds)
-            #for name in names:
-            #    print name
-            #    df[name] = df[name][inds]
-
-        #print(np.corrcoef(df["Spin"].values, df["X_Msp_mean"].values))
-        #exit()
         #Make the dataframe an attribute and that's it
         self.dataframe = df
-
-        #Make a dictionary of the correlated variables
+        #Make a dictionary of the correlated variables and MICed variables
         self.correlated_variables = {}
+        self.MICed_variables = {}
 
     def property(self, name):
         """Get the values of a property in the dataframe.
@@ -96,25 +95,33 @@ class Catalog(object):
             raise Exception("R_or_M must be either 'R' or 'M'.")
         if kind not in ["mean", "percentile50",
                         "percentile75", "percentile87"]:
-            raise Exception("kind must be 'mean', 'percentile50', 'percentile75', or 'percentile87'.")
+            raise Exception("kind must be 'mean', 'percentile50', "+
+                            "'percentile75', or 'percentile87'.")
         
         if "%s_%s"%(R_or_M, kind) in self.correlated_variables.keys():
             #Correlations already computed
             return
 
-        pids = self.dataframe['upid_mean']
+        pids = self.dataframe['upid_%s'%kind] #pics out parent halos
         inds = pids < 0
         
         X = self.dataframe['X_%ssp_%s'%(R_or_M, kind)].values
         ordered_names = np.array([])
         ordered_corrs = np.array([])
         for name in self.dataframe.columns:
+            #Skip certain keywords
+            if name in skipped_names:
+                continue
+            if any(x in name for x in ["upid","percentile"]):
+                continue
             v = self.dataframe[name].values
             ordered_corrs = np.append(ordered_corrs, np.corrcoef(X[inds], v[inds])[0,1])
             ordered_names = np.append(ordered_names, name)
         order = np.argsort(np.fabs(ordered_corrs))
+        #Ascending order
         self.ordered_corrs = ordered_corrs[order][::-1]
         self.ordered_names = ordered_names[order][::-1]
+        self.order = order
 
         #Save the correlations
         self.correlated_variables['%s_%s'%(R_or_M, kind)] = \
@@ -122,13 +129,79 @@ class Catalog(object):
 
         #Return the result
         return self.ordered_names, self.ordered_corrs
-    
 
+    def compute_MICs(self, R_or_M, kind="mean",
+                     alpha=0.6, c=15, est="mic_approx"):
+        """Compute the maximal information coefficient (MIC) between either X_R or X_M
+        with everything else.
+
+        Stores the MIC attributes in a dictionary, and
+        also returns them.
+
+        Args:
+            R_or_M (string): either 'R' or 'M'
+            kind (string): the kind of splashback definition, e.g. "mean" or "percentile75"
+            alpha (float): see MINEPY docs
+            c (int): see MINEPY docs
+            est (string): see MINEPY docs
+
+        Returns:
+            names: array of strings ordered by MIC values.
+            MICs: array of MICs
+
+        """
+        if R_or_M not in ["R", "M"]:
+            raise Exception("R_or_M must be either 'R' or 'M'.")
+        if kind not in ["mean", "percentile50",
+                        "percentile75", "percentile87"]:
+            raise Exception("kind must be 'mean', 'percentile50', "+
+                            "'percentile75', or 'percentile87'.")
+        
+        if "%s_%s"%(R_or_M, kind) in self.MICed_variables.keys():
+            #MICs already computed
+            return
+        
+        pids = self.dataframe['upid_%s'%kind] #pics out parent halos
+        inds = pids < 0
+
+        #Make a MINE object to computes MICs
+        mine = MINE(alpha=0.6, c=15, est="mic_approx")
+        
+        X = self.dataframe['X_%ssp_%s'%(R_or_M, kind)].values
+        MIC_ordered_names = np.array([])
+        ordered_MICs = np.array([])
+        for name in self.dataframe.columns:
+            if name in skipped_names:
+                continue
+            if any(x in name for x in ["upid","percentile"]):
+                continue
+            v = self.dataframe[name].values
+            mine.compute_score(X[inds], v[inds])
+            ordered_MICs = np.append(ordered_MICs, mine.mic())
+            MIC_ordered_names = np.append(MIC_ordered_names, name)
+        MIC_order = np.argsort(ordered_MICs)
+        #Ascending order
+        self.ordered_MICs = ordered_MICs[MIC_order][::-1]
+        self.MIC_ordered_names = MIC_ordered_names[MIC_order][::-1]
+        self.MIC_order = MIC_order
+
+        #Save the MICs
+        self.MICed_variables['%s_%s'%(R_or_M, kind)] = \
+            [self.MIC_ordered_names, self.ordered_MICs]
+
+        #Return the result
+        return self.MIC_ordered_names, self.ordered_MICs
+
+        
 if __name__ == "__main__":
     cat = Catalog(2000, 1.)
     
     print(cat.dataframe.columns)
     names, corrs = cat.compute_correlations("M")
+    MIC_names, MICs = cat.compute_MICs("M")
 
-    for name, R in zip(names, corrs):
-        print(name, R)
+    #for name, R in zip(names, corrs):
+    #    print(name, R)
+
+    for name, MIC in zip(MIC_names, MICs):
+        print(name, MIC)
