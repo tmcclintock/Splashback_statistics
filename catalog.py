@@ -16,7 +16,7 @@ skipped_names = ["scale","id","desc_scale","desc_id","num_prog","pid","upid",
                  "M200b","R200b","M200b_all","Mvir","M200c","M500c","M2500c",
                  "M_pe_Behroozi","M_pe_Diemer","Macc","Mpeak","First_Acc_Mvir",
                  "First_Acc_Vmax","Vmax\@Mpeak","Rsp_status",
-                 "Future_merger_MMP_ID"]
+                 "Future_merger_MMP_ID","Time_to_future_merger","desc_pid"]
 
 class Catalog(object):
     """Splashback halo catalog
@@ -84,7 +84,8 @@ class Catalog(object):
 
         Args:
             R_or_M (string): either 'R' or 'M'
-            kind (string): the kind of splashback definition, e.g. "mean" or "percentile75"
+            kind (string): the kind of splashback definition, e.g. 
+                "mean" or "percentile75"
 
         Returns:
             names: array of strings ordered by absolute correlation.
@@ -97,8 +98,9 @@ class Catalog(object):
                         "percentile75", "percentile87"]:
             raise Exception("kind must be 'mean', 'percentile50', "+
                             "'percentile75', or 'percentile87'.")
-        
-        if "%s_%s"%(R_or_M, kind) in self.correlated_variables.keys():
+
+        this_var = "%s_%s"%(R_or_M, kind)
+        if this_var in self.correlated_variables.keys():
             #Correlations already computed
             return
 
@@ -112,7 +114,8 @@ class Catalog(object):
             #Skip certain keywords
             if name in skipped_names:
                 continue
-            if any(x in name for x in ["upid","percentile"]):
+            if any(x in name for x in ["upid","percentile",
+                                       'X_%ssp_%s'%(R_or_M, kind)]):
                 continue
             v = self.dataframe[name].values
             ordered_corrs = np.append(ordered_corrs, np.corrcoef(X[inds], v[inds])[0,1])
@@ -140,7 +143,8 @@ class Catalog(object):
 
         Args:
             R_or_M (string): either 'R' or 'M'
-            kind (string): the kind of splashback definition, e.g. "mean" or "percentile75"
+            kind (string): the kind of splashback definition, e.g. 
+                "mean" or "percentile75"
             alpha (float): see MINEPY docs
             c (int): see MINEPY docs
             est (string): see MINEPY docs
@@ -173,7 +177,8 @@ class Catalog(object):
         for name in self.dataframe.columns:
             if name in skipped_names:
                 continue
-            if any(x in name for x in ["upid","percentile"]):
+            if any(x in name for x in ["upid","percentile",
+                                       'X_%ssp_%s'%(R_or_M, kind)]):
                 continue
             v = self.dataframe[name].values
             mine.compute_score(X[inds], v[inds])
