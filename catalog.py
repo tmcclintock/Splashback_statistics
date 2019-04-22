@@ -75,6 +75,10 @@ class Catalog(object):
             raise Exception("Invalid property.")
         return self.dataframe[name].values
 
+    def add_property(self, name, values):
+        self.dataframe[name] = values
+        return
+
     def compute_correlations(self, R_or_M, kind="mean"):
         """Compute the correlations between either X_R or X_M
         with everything else.
