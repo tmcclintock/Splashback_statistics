@@ -23,31 +23,31 @@ class Catalog(object):
     """Splashback halo catalog
     
     Args:
-        length (float): side length of the simulation
+        lengths (array-like): list of side lengths of the simulations
         scale_factor (float): scale factor of the snapshot
         cosmo (string): cosmology of the sim. Default is bolshoi
     """
-    def __init__(self, length, scale_factor, cosmo="bolshoi", parents_only=True):
+    def __init__(self, lengths, scale_factor, cosmo="bolshoi", parents_only=True):
         names    = _default_header.split(" ")
-        for i,name in enumerate(names):
+        for i, name in enumerate(names):
             newname = name[:name.find('(')]
             names[i] = newname
         names[0] = names[0][1:] #remove the pound sign from scale
 
 	# if the number of input catalog = 1
-        if len(length) == 1:
+        if len(lengths) == 1:
             #Load in the catalog as an array
-            data = np.loadtxt("sparta_cats/L%04d_N1024_CBol/hlist_%.5f_mpeak.list"%(length[0], scale_factor))
+            data = np.loadtxt("sparta_cats/L%04d_N1024_CBol/hlist_%.5f_mpeak.list"%(lengths[0], scale_factor))
 
             #Create the dataframe
             df = pd.DataFrame(data=data, columns=names)
         #if we want to concatenate all the input catalogs
         else:
-            for i in range(len(length)):
+            for i in range(len(lengths)):
                 if i == 0:
-                    df = pd.DataFrame(data = np.loadtxt("sparta_cats/L%04d_N1024_CBol/hlist_%.5f_mpeak.list"%(length[i], scale_factor)), columns=names)
+                    df = pd.DataFrame(data = np.loadtxt("sparta_cats/L%04d_N1024_CBol/hlist_%.5f_mpeak.list"%(lengths[i], scale_factor)), columns=names)
                 else:
-                    df = pd.concat([df,pd.DataFrame(data = np.loadtxt("sparta_cats/L%04d_N1024_CBol/hlist_%.5f_mpeak.list"%(length[i], scale_factor)), columns=names)])
+                    df = pd.concat([df,pd.DataFrame(data = np.loadtxt("sparta_cats/L%04d_N1024_CBol/hlist_%.5f_mpeak.list"%(lengths[i], scale_factor)), columns=names)])
 
         #Add columns for the things that we want
         #This includes c200b and the ratios X_
