@@ -1,1 +1,0 @@
-This file contains a single example catalog. This catalog is preliminary, and shouldn't be used for published work.
