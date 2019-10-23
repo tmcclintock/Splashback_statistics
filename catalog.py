@@ -35,21 +35,19 @@ class Catalog(object):
         names[0] = names[0][1:] #remove the pound sign from scale
 
 	# if the number of input catalog = 1
-	if len(length) == 1:
-	    #Load in the catalog as an array
-	    data = np.loadtxt("sparta_cats/L%04d_N1024_CBol/hlist_%.5f_mpeak.list"%(length[0], scale_factor))
+        if len(length) == 1:
+            #Load in the catalog as an array
+            data = np.loadtxt("sparta_cats/L%04d_N1024_CBol/hlist_%.5f_mpeak.list"%(length[0], scale_factor))
 
-	    #Create the dataframe
-	    df = pd.DataFrame(data=data, columns=names)
-
-	# if we want to concatenate all the input catalogs
-	else: 
-	    for i in range(len(length)):
-	        if i == 0:
-	            df = pd.DataFrame(data = np.loadtxt("sparta_cats/L%04d_N1024_CBol/hlist_%.5f_mpeak.list"%(length[i], scale_factor)), columns=names)
-		    
-	        else:
-		    df = pd.concat([df,pd.DataFrame(data = np.loadtxt("sparta_cats/L%04d_N1024_CBol/hlist_%.5f_mpeak.list"%(length[i], scale_factor)), columns=names)])
+            #Create the dataframe
+            df = pd.DataFrame(data=data, columns=names)
+        #if we want to concatenate all the input catalogs
+        else:
+            for i in range(len(length)):
+                if i == 0:
+                    df = pd.DataFrame(data = np.loadtxt("sparta_cats/L%04d_N1024_CBol/hlist_%.5f_mpeak.list"%(length[i], scale_factor)), columns=names)
+                else:
+                    df = pd.concat([df,pd.DataFrame(data = np.loadtxt("sparta_cats/L%04d_N1024_CBol/hlist_%.5f_mpeak.list"%(length[i], scale_factor)), columns=names)])
 
         #Add columns for the things that we want
         #This includes c200b and the ratios X_
@@ -59,22 +57,22 @@ class Catalog(object):
             df["X_Rsp_%s"%kind] = df["Rsp_%s"%kind].values / df["R200b"]
             df["X_Msp_%s"%kind] = df["Msp_%s"%kind].values / df["M200b"]
             continue
-	# Define 3d ellipticity
-	df["e_3d"] = (df["c_to_a"].values - 1.)/(2.*(df["c_to_a"].values+df["b_to_a"].values+1.))
-	df["e_3d_500c"] = (df["c_to_a_500c"].values - 1.)/(2.*(df["c_to_a_500c"].values+df["b_to_a_500c"].values+1.))
+        # Define 3d ellipticity
+        df["e_3d"] = (df["c_to_a"].values - 1.)/(2.*(df["c_to_a"].values+df["b_to_a"].values+1.))
+        df["e_3d_500c"] = (df["c_to_a_500c"].values - 1.)/(2.*(df["c_to_a_500c"].values+df["b_to_a_500c"].values+1.))
 
-	# Normalize the radius-related property.
-	df["Halfmass_Radius"] /= df["R200b"]
+        # Normalize the radius-related property.
+        df["Halfmass_Radius"] /= df["R200b"]
 
-	# Normalize the accretion rate
-	# for now, we assume we are working on a single snapshot, but if we want to generalize it to multiple snapshots, we have to remove the scale-factor dependency too.
-	# Acc_rockstar = dM/dt = (dM/dlnM)*(dlnM/dlna)*(dlna/da)*(da/dt)
-	# Thus, dlnM/dlna = (Acc_rockstar/M)*(a*dt/da) -- note that (a*dt/da) is consistent within the same snapshot		
-	df["Acc_Rate_Inst"] /= df["Msp_mean"]
-	df["Acc_Rate_100Myr"] /= df["Msp_mean"]
-	df["Acc_Rate_1*Tdyn"] /= df["Msp_mean"]
-	df["Acc_Rate_2*Tdyn"] /= df["Msp_mean"]
-	df["Acc_Rate_Mpeak"] /= df["Msp_mean"]
+        # Normalize the accretion rate
+        # for now, we assume we are working on a single snapshot, but if we want to generalize it to multiple snapshots, we have to remove the scale-factor dependency too.
+        # Acc_rockstar = dM/dt = (dM/dlnM)*(dlnM/dlna)*(dlna/da)*(da/dt)
+        # Thus, dlnM/dlna = (Acc_rockstar/M)*(a*dt/da) -- note that (a*dt/da) is consistent within the same snapshot		
+        df["Acc_Rate_Inst"] /= df["Msp_mean"]
+        df["Acc_Rate_100Myr"] /= df["Msp_mean"]
+        df["Acc_Rate_1*Tdyn"] /= df["Msp_mean"]
+        df["Acc_Rate_2*Tdyn"] /= df["Msp_mean"]
+        df["Acc_Rate_Mpeak"] /= df["Msp_mean"]
 
         #Now the peak heights
         cosmology.setCosmology(cosmo)
@@ -166,15 +164,15 @@ class Catalog(object):
         return self.ordered_names, self.ordered_corrs
 
     def compute_partial_correlations(self, R_or_M, y, kind="mean"):
-	"""Compute the correlations between either X_R or X_M
+        """Compute the correlations between either X_R or X_M
         with everything else, with any one variable (y) FIXED.
 
-	Stores the partial correlation attributes in a dictionary, and
+        Stores the partial correlation attributes in a dictionary, and
         also returns them.
 
         Args:
             R_or_M (string): either 'R' or 'M'
-	    y (string): the name of the "fixed" variable
+            y (string): the name of the "fixed" variable
             kind (string): the kind of splashback definition, e.g. 
                 "mean" or "percentile75"
 
@@ -183,50 +181,50 @@ class Catalog(object):
             correlations: array of partial correlations
 
         """
-	if R_or_M not in ["R", "M"]:
+        if R_or_M not in ["R", "M"]:
             raise Exception("R_or_M must be either 'R' or 'M'.")
         if kind not in ["mean", "percentile50",
                         "percentile75", "percentile87"]:
             raise Exception("kind must be 'mean', 'percentile50', "+
                             "'percentile75', or 'percentile87'.")
 
-	pids = self.dataframe['upid_%s'%kind] #pics out parent halos
+        pids = self.dataframe['upid_%s'%kind] #pics out parent halos
         inds = pids < 0
 
-	y_vec = self.dataframe[y].values  ### the fixed variable
-	X = self.dataframe['X_%ssp_%s'%(R_or_M, kind)].values
-	names, two_point_corr = self.correlated_variables['%s_%s'%(R_or_M, kind)] ### correlations should have been calculated before running this function
-	corr_Xy = np.corrcoef(X[inds],y_vec[inds])[0,1]  #dependent variable (X) vs fixed variable
-	ordered_names = np.array([])
+        y_vec = self.dataframe[y].values  ### the fixed variable
+        X = self.dataframe['X_%ssp_%s'%(R_or_M, kind)].values
+        names, two_point_corr = self.correlated_variables['%s_%s'%(R_or_M, kind)] ### correlations should have been calculated before running this function
+        corr_Xy = np.corrcoef(X[inds],y_vec[inds])[0,1]  #dependent variable (X) vs fixed variable
+        ordered_names = np.array([])
         ordered_corrs = np.array([])
-	for name in self.dataframe.columns:
+        for name in self.dataframe.columns:
             #Skip certain keywords
             if name in skipped_names:
                 continue
-	    if name == y:
-		continue
+            if name == y:
+                continue
             if any(x in name for x in ["upid","percentile",
                                        'X_%ssp_%s'%(R_or_M, kind)]):
                 continue
-	    idx_var = np.where(names==name)[0]
-	    corr_Xv = two_point_corr[idx_var] #dependent variable (X) vs variable of interest
-	    v = self.dataframe[name].values[inds]
-	    corr_vy = np.corrcoef(v,y_vec[inds])[0,1] #fixed variable vs variable of interest
-	    #now calculate partial correlation 
-	    ordered_corrs = np.append(ordered_corrs, (corr_Xv-corr_Xy*corr_vy)/np.sqrt(1.-corr_Xy**2)*np.sqrt(1.-corr_vy**2))
+            idx_var = np.where(names==name)[0]
+            corr_Xv = two_point_corr[idx_var] #dependent variable (X) vs variable of interest
+            v = self.dataframe[name].values[inds]
+            corr_vy = np.corrcoef(v,y_vec[inds])[0,1] #fixed variable vs variable of interest
+            #now calculate partial correlation 
+            ordered_corrs = np.append(ordered_corrs, (corr_Xv-corr_Xy*corr_vy)/np.sqrt(1.-corr_Xy**2)*np.sqrt(1.-corr_vy**2))
             ordered_names = np.append(ordered_names, name)	
-	    
-	order = np.argsort(np.fabs(ordered_corrs))
+
+        order = np.argsort(np.fabs(ordered_corrs))
         ordered_corrs_partial = ordered_corrs[order][::-1]
         ordered_names_partial = ordered_names[order][::-1]
-	
-	self.correlated_variables['%s_%s_%s-fixed'%(R_or_M, kind,y)] = \
+
+        self.correlated_variables['%s_%s_%s-fixed'%(R_or_M, kind,y)] = \
             [ordered_names_partial, ordered_corrs_partial]
 
-	return ordered_names_partial, ordered_corrs_partial
+        return ordered_names_partial, ordered_corrs_partial
 
     def compute_multiple_correlations(self, R_or_M, variables, kind="mean"):
-	"""Compute the multiple correlation between either X_R or X_M
+        """Compute the multiple correlation between either X_R or X_M
         with A SET OF variables.
 
         Args:
@@ -249,20 +247,20 @@ class Catalog(object):
         pids = self.dataframe['upid_%s'%kind] #pics out parent halos
         inds = pids < 0
 
-	names, two_point_corr = self.correlated_variables['%s_%s'%(R_or_M, kind)]
-	ind_name = np.in1d(names,variables)
-	name_ordered = names[ind_name]
-	corr_Xv = two_point_corr[ind_name]
+        names, two_point_corr = self.correlated_variables['%s_%s'%(R_or_M, kind)]
+        ind_name = np.in1d(names,variables)
+        name_ordered = names[ind_name]
+        corr_Xv = two_point_corr[ind_name]
 
-	corr_matrix_of_vars = np.zeros((len(variables),len(variables)))
-	for i in range(len(variables)):
-	    for j in range(len(variables)):
-		arr1 = (self.dataframe[name_ordered[i]].values)[inds]
-		arr2 = (self.dataframe[name_ordered[j]].values)[inds]
-		corr_matrix_of_vars[i,j] = np.corrcoef(arr1,arr2)[0,1]
+        corr_matrix_of_vars = np.zeros((len(variables),len(variables)))
+        for i in range(len(variables)):
+            for j in range(len(variables)):
+                arr1 = (self.dataframe[name_ordered[i]].values)[inds]
+                arr2 = (self.dataframe[name_ordered[j]].values)[inds]
+                corr_matrix_of_vars[i,j] = np.corrcoef(arr1,arr2)[0,1]
 
-	multiple_corr = np.matmul(np.matmul(corr_Xv,np.linalg.inv(corr_matrix_of_vars)),corr_Xv.T)
-	return name_ordered, np.sqrt(multiple_corr)
+        multiple_corr = np.matmul(np.matmul(corr_Xv,np.linalg.inv(corr_matrix_of_vars)),corr_Xv.T)
+        return name_ordered, np.sqrt(multiple_corr)
 
     def compute_MICs(self, R_or_M, kind="mean",
                      alpha=0.6, c=15, est="mic_approx"):
@@ -335,36 +333,36 @@ if __name__ == "__main__":
     names, corrs = cat.compute_correlations("R", "mean")
     names_partial_acc, corrs_partial_acc = cat.compute_partial_correlations("R","Acc_Rate_2*Tdyn","mean")
     names_partial_nu, corrs_partial_nu = cat.compute_partial_correlations("R","nusp_mean","mean")
-    print "-----------------------------------"
+    print("-----------------------------------")
 
-    print "###################################"
-    print "regular correlation between X_Rsp_mean and variables"
-    print "###################################"
+    print("###################################")
+    print("regular correlation between X_Rsp_mean and variables")
+    print("###################################")
     for i in range(len(names)):
-	print "%20s %.4f"%(names[i], corrs[i])
-    print "-----------------------------------"
+        print("%20s %.4f"%(names[i], corrs[i]))
+    print("-----------------------------------")
 
-    print "###################################"
-    print "partial correlation between X_Rsp_mean and variables, FIXING Acc_Rate_2*Tdyn"
-    print "###################################"
+    print("###################################")
+    print("partial correlation between X_Rsp_mean and variables, FIXING Acc_Rate_2*Tdyn")
+    print("###################################")
     for i in range(len(names_partial_acc)):
-        print "%20s %.4f"%(names_partial_acc[i], corrs_partial_acc[i])
-    print "-----------------------------------"
+        print("%20s %.4f"%(names_partial_acc[i], corrs_partial_acc[i]))
+    print("-----------------------------------")
 
-    print "###################################"
-    print "partial correlation between X_Rsp_mean and variables, FIXING nusp_mean"
-    print "###################################"
+    print("###################################")
+    print("partial correlation between X_Rsp_mean and variables, FIXING nusp_mean")
+    print("###################################")
     for i in range(len(names_partial_nu)):
-	print "%20s %.4f"%(names_partial_nu[i], corrs_partial_nu[i])
+        print("%20s %.4f"%(names_partial_nu[i], corrs_partial_nu[i]))
     
-    print "-----------------------------------"
-    print cat.compute_multiple_correlations("R",["Acc_Rate_2*Tdyn","nusp_mean"],"mean")
+    print("-----------------------------------")
+    print(cat.compute_multiple_correlations("R",["Acc_Rate_2*Tdyn","nusp_mean"],"mean"))
 
-    print cat.compute_multiple_correlations("R",["Acc_Rate_2*Tdyn","T/|U|"],"mean")
-    print cat.compute_multiple_correlations("R",["T/|U|","nusp_mean"],"mean")
+    print(cat.compute_multiple_correlations("R",["Acc_Rate_2*Tdyn","T/|U|"],"mean"))
+    print(cat.compute_multiple_correlations("R",["T/|U|","nusp_mean"],"mean"))
 
-    print cat.compute_multiple_correlations("R",["Acc_Rate_2*Tdyn","Halfmass_Scale"],"mean")
-    print cat.compute_multiple_correlations("R",["nusp_mean","Halfmass_Scale"],"mean")
+    print(cat.compute_multiple_correlations("R",["Acc_Rate_2*Tdyn","Halfmass_Scale"],"mean"))
+    print(cat.compute_multiple_correlations("R",["nusp_mean","Halfmass_Scale"],"mean"))
 
-    print cat.compute_multiple_correlations("R",["Acc_Rate_2*Tdyn","Spin"],"mean")
-    print cat.compute_multiple_correlations("R",["nusp_mean","Spin"],"mean")
+    print(cat.compute_multiple_correlations("R",["Acc_Rate_2*Tdyn","Spin"],"mean"))
+    print(cat.compute_multiple_correlations("R",["nusp_mean","Spin"],"mean"))
