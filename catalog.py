@@ -329,9 +329,9 @@ class Catalog(object):
         
 if __name__ == "__main__":
 #    cat = Catalog([2000,1000,500,250,125,63], 0.88534)
-    cat = Catalog([2000], 0.88534)
+    cat = Catalog([500], 1.)
     df = cat.dataframe
-    df.to_pickle('./sparta_cats/L2000_N1024_CBol/df_L2000_sf1_CBol.pkl')
+    df.to_pickle('./sparta_cats/L0500_N1024_CBol/df_L0500_sf1_CBol.pkl')
     exit()
     names, corrs = cat.compute_correlations("R", "mean")
     names_partial_acc, corrs_partial_acc = cat.compute_partial_correlations("R","Acc_Rate_2*Tdyn","mean")
